@@ -1,27 +1,29 @@
 (ns axon.edn.serializer.reader
-  (:require [clojure.edn :as edn]
-            [miner.tagged :as tag]))
+  (:require [clojure.edn :as edn]))
 
-(defrecord AAA [a b c])
-(defn read-string[str]
+(defn import-by-name [fqn]
+  (.importClass (the-ns *ns*)
+                (clojure.lang.RT/classForName (str fqn))))
 
-  )
-(defn try-construct [tag val]
-  (prn (type tag))
-  (prn val)
-  ;;if map map->
-  ;;if list apply with ->
-  (eval (read-string (str "(" (str tag) "." " \"a\" "  " \"b\")")))
+;;(def generate->fn (memoize gen-record))
+(defn retrieve-legit-cp
+  [s]
+  (clojure.string/replace
+   (clojure.string/replace s  #"\.\w+$" "")
+   #"_" "-"))
 
-  )
-
-(defn ->record
-  "tag need to be in the clojure tag format namespace/Type ,
-in the prn-string it will form the symbol as namespace.Type"
+(defn gen-record
   [tag]
-  (when (and (symbol tag)
-             (namespace tag))
+  (let [tag_str           (str tag)
+        type_name         (last (clojure.string/split tag_str #"\."))
+        namespace_literal (retrieve-legit-cp tag_str)
+        fqn (str namespace_literal "/map->" type_name  )]
+    (resolve (symbol fqn))))
 
+(defn- create-record
+  [tag val]
+  ((gen-record tag) val))
 
-    )
-  )
+(defn read-string
+  [s]
+  (edn/read-string {:default create-record} s))

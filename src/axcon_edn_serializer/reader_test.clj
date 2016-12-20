@@ -1,12 +1,29 @@
-(ns axcon.edn.serializer.core-test
-  (:import [org.axonframework.serializer
-            SimpleSerializedObject])
+(ns axon.edn.serializer.reader.test)
+(defrecord TestRecordWithNormalClassPath [a b])
+
+(ns axon.edn.serializer.reader-test
   (:require [clojure.test :refer :all]
-            [axcon.edn.serializer.reader :as r]
+            [axon.edn.serializer.reader :as r]
+
             )
+  (:import [ axon.edn.serializer.reader.test TestRecordWithNormalClassPath])
   (:use midje.sweet))
 
-(fact "should get basic types"
-      (r/read "a") =>  #'a
-      (r/read "(:a :b)\n") => '(:a :b)
-      )
+(defrecord TestRecord [a b])
+
+(fact "should be able wrap record"
+      (let [record (TestRecordWithNormalClassPath. 1 2)
+            record_str (prn-str record )]
+        (r/read-string  record_str) => record))
+
+
+(fact "should be able to handle record with class path - in it"
+      (let [record (TestRecord. 1 2)
+            record_str (prn-str record )]
+        (r/read-string  record_str) => record))
+
+
+(fact "should be able to handle java object- in it"
+      (let [record (Object.)
+            record_str (prn-str record )]
+        (r/read-string  record_str) => record))
